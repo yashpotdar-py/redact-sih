@@ -4,7 +4,7 @@
         {
             "format": "piisa:config:pii-extract-plg-transformers:main:v1",
             "task_config": {
-                "cachedir": "/home/user/app/cache",
+                "cachedir": "app/cache",
                 "reuse_engine": true,
                 "aggregation": "max",
                 "models": [
