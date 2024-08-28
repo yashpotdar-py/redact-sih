@@ -1,12 +1,15 @@
-import gradio as gr
 import os
+import gradio as gr
 from pii_transform.api.e2e import PiiTextProcessor
-from pii_extract.defs import FMT_CONFIG_PLUGIN
+# from pii_extract.defs import FMT_CONFIG_PLUGIN
 
+# Load examples from a file
 examples = []
 with open("example.txt", "r") as f:
     examples = f.readlines()
 examples_truncated = [example[:50] + "..." for example in examples]
+
+# Define language choices
 language_choices = {
     "English": "en",
     "Italian": "it",
@@ -16,14 +19,18 @@ language_choices = {
     "French": "fr",
 }
 language_code = "en"
+
+# Create cache directory if it doesn't exist
 cache_dir = "app/cache"
 os.makedirs(cache_dir, exist_ok=True)
 if os.path.isdir(cache_dir):
-    gr.Info("Cache directory created at "+cache_dir)
+    gr.Info("Cache directory created at " + cache_dir)
 else:
     gr.Warning("Cache directory creation error")
 
 header_string = """## **ReDactify**"""
+
+# Change language function
 
 
 def change_language(language_selection):
@@ -31,30 +38,50 @@ def change_language(language_selection):
     language_code = language_choices[language_selection]
     gr.Info(f"{language_selection} selected")
 
+# Process function to handle the text
+
 
 def process(text, policy):
-    # Create the object, defining the language to use and the policy
-    # Further customization is possible by providing a config
     policy = policy.lower()
     if text == "":
         print("Empty text field")
         gr.Warning("No text present")
         return ""
 
-    # Custom config to prevent loading of the Presidio plugin
+    # Initialize the PiiTextProcessor with the given language and policy
     proc = PiiTextProcessor(
         lang=language_code, default_policy=policy, config="config.json"
     )
 
-    # Process a text buffer and get the transformed buffer
+    # Process the input text to extract/transform PII
     outbuf = proc(text)
+    print(outbuf)
+    # Apply HTML tags to highlight the detected entities
+    outbuf = outbuf.replace(
+        "<PERSON:", "<span style='color:blue; font-weight:bold;'>&lt;PERSON:</span>")
+    outbuf = outbuf.replace(
+        "<LOCATION:", "<span style='color:green; font-weight:bold;'>&lt;LOCATION:</span>")
+    outbuf = outbuf.replace(
+        "<PHONE_NUMBER:", "<span style='color:red; font-weight:bold;'>&lt;PHONE NUMBER:</span>")
+    outbuf = outbuf.replace(
+        "<EMAIL_ADDRESS:", "<span style='color:orange; font-weight:bold;'>&lt;EMAIL ADDRESS:</span>")
+    outbuf = outbuf.replace(
+        "<PII>", "<span style='color:orange; font-weight:bold;'>&lt;||||&gt;</span>"
+    )
+
+    # Wrapping content in a pre tag to maintain formatting
+    outbuf = f"<pre style='white-space: pre-wrap;'>{outbuf}</pre>"
+
     return outbuf
+
+# Function to get full example text
 
 
 def get_full_example(idx):
     return examples[idx]
 
 
+# Gradio interface
 with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column():
@@ -69,7 +96,6 @@ with gr.Blocks() as demo:
                 show_label=False,
                 show_download_button=False,
                 show_share_button=False,
-                # mask_opacity=1.0,
             )
     with gr.Row():
         with gr.Column(scale=2, min_width=400):
@@ -106,42 +132,29 @@ with gr.Blocks() as demo:
 
         with gr.Column(scale=0, min_width=25):
             pass
-        with gr.Column(
-            scale=2,
-            min_width=400,
-        ):
-            text_modified = gr.TextArea(
-                label="Transformed Text",
-                lines=13,
-                show_copy_button=True,
-                interactive=False,
-            )
+
+        with gr.Column(scale=2, min_width=400, variant='compact', show_progress=True):
+            # gr.Text(label="Transformed Text")
+            text_modified = gr.HTML(label="Transformed Text")
         annotate_btn.click(
-            fn=process, inputs=[text_original,
-                                annotate_btn], outputs=text_modified
+            fn=process,
+            inputs=[text_original, gr.Text(value="annotate", visible=False)],
+            outputs=text_modified,
         )
         redact_btn.click(
             fn=process,
-            inputs=[
-                text_original,
-                gr.Text(value="redact", visible=False),
-            ],
+            inputs=[text_original, gr.Text(value="redact", visible=False)],
             outputs=text_modified,
         )
         anonymize_btn.click(
             fn=process,
-            inputs=[
-                text_original,
-                gr.Text(value="synthetic", visible=False),
-            ],
+            inputs=[text_original, gr.Text(value="synthetic", visible=False)],
             outputs=text_modified,
         )
         placeholder_btn.click(
             fn=process,
-            inputs=[
-                text_original,
-                gr.Text(value="placeholder", visible=False),
-            ],
+            inputs=[text_original, gr.Text(
+                value="placeholder", visible=False)],
             outputs=text_modified,
         )
     with gr.Row():
