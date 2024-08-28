@@ -23,7 +23,7 @@ if os.path.isdir(cache_dir):
 else:
     gr.Warning("Cache directory creation error")
 
-header_string = """## **PIISA**"""
+header_string = """## **ReDactify**"""
 
 
 def change_language(language_selection):
