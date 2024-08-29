@@ -66,7 +66,7 @@ def process(text, policy):
     outbuf = outbuf.replace(
         "<EMAIL_ADDRESS:", "<span style='color:orange; font-weight:bold;'>&lt;EMAIL ADDRESS:</span>")
     outbuf = outbuf.replace(
-        "<PII>", "<span style='color:orange; font-weight:bold;'>&lt;||||&gt;</span>"
+        "<PII>", "<span style='color:orange; font-weight:bold;'>︲︲︲︲︲︲︲</span>"
     )
 
     # Wrapping content in a pre tag to maintain formatting
